@@ -250,7 +250,7 @@ func (l *Listener) Responses() map[uint64][]byte {
 // listen continuously reads packets received in the conn and calls handlePacket.
 func (l *Listener) listen() {
 	for {
-		b := make([]byte, 1024)
+		b := make([]byte, 65536)
 		n, addr, err := l.conn.ReadFrom(b)
 		if err != nil {
 			if !errors.Is(err, net.ErrClosed) {
@@ -503,4 +503,15 @@ func (ctx listenerContext) Err() error {
 // Value returns nil for any key, as no values are associated with the context.
 func (listenerContext) Value(any) any {
 	return nil
+}
+
+func (l *Listener) CopyAddressesTo(dst *Listener) {
+	l.addressesMu.RLock()
+	defer l.addressesMu.RUnlock()
+	dst.addressesMu.Lock()
+	defer dst.addressesMu.Unlock()
+	for k, v := range l.addresses {
+		v.t = time.Now()
+		dst.addresses[k] = v
+	}
 }
